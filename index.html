@@ -1,1 +1,1897 @@
-hello
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Expenses</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #F4F1EC;
+  --surface: #FFFFFF;
+  --surface2: #FAF8F5;
+  --border: #E0DAD0;
+  --border2: #CBC3B7;
+  --text: #1C1814;
+  --muted: #8C857C;
+  --accent: #2A5C48;
+  --accent2: #3D7A62;
+  --accent-light: #E8F2EE;
+  --accent-border: #B8D8CC;
+  --danger: #B83232;
+  --danger-light: #FAEAEA;
+  --warning: #D47C1A;
+  --warning-light: #FDF3E3;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow: 0 3px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--accent);
+  color: white;
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+header h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.batch-pill {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.9);
+}
+
+.user-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 7px;
+  padding: 6px 12px;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.user-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ── LAYOUT ── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .sidebar.open { display: flex; position: fixed; inset: 56px 0 0 0; z-index: 40; width: 280px; }
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-header h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.sidebar-refresh {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.sidebar-refresh:hover { color: var(--accent); }
+
+.batch-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.batch-item {
+  padding: 10px 18px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  position: relative;
+}
+
+.batch-item:hover { background: var(--accent-light); }
+.batch-item.active { background: var(--accent-light); border-left: 3px solid var(--accent); }
+
+.batch-item-num {
+  font-family: 'Fraunces', serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.batch-item-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.batch-item-total {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.batch-item-versions {
+  font-size: 0.7rem;
+  color: var(--warning);
+  margin-top: 2px;
+}
+
+.batch-item-draft {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid #E8C070;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-top: 3px;
+}
+
+.sidebar-empty {
+  padding: 40px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* ── MAIN CONTENT ── */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: calc(100vh - 56px);
+}
+
+/* ── SIGN IN SCREEN ── */
+.signin-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.signin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 48px 40px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.signin-card h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  margin-bottom: 8px;
+}
+
+.signin-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.google-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.google-btn:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── START SCREEN ── */
+.start-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.start-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 48px 40px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.start-card h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-weight: 300;
+  margin-bottom: 8px;
+}
+
+.start-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+/* ── BATCH WORK AREA ── */
+.batch-area {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.batch-area.visible { display: flex; }
+
+.batch-toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settlement-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.settlement-ctrl input {
+  width: 64px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.batch-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── FORM CARD ── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-head h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+.card-body { padding: 20px; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.span2 { grid-column: span 2; }
+.field.span3 { grid-column: 1 / -1; }
+
+label {
+  font-size: 0.71rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+input[type="text"], input[type="number"], select {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  width: 100%;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(42,92,72,0.1);
+}
+
+.cat-input {
+  background: var(--accent-light) !important;
+  border-color: var(--accent-border) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.multi-cat-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+  min-height: 16px;
+  font-style: italic;
+}
+
+.error-msg {
+  font-size: 0.75rem;
+  color: var(--danger);
+  display: none;
+  margin-top: 2px;
+}
+
+.field.has-error input, .field.has-error select { border-color: var(--danger); }
+.field.has-error .error-msg { display: block; }
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.83rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover:not(:disabled) { background: #1F4A38; transform: translateY(-1px); }
+
+.btn-secondary { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent); }
+
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover:not(:disabled) { background: #9A2A2A; }
+
+.btn-warning { background: var(--warning); color: white; }
+.btn-warning:hover:not(:disabled) { background: #B86A10; }
+
+.btn-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--border2); }
+
+.btn-lg { padding: 12px 28px; font-size: 0.92rem; }
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.table-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.table-head h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+.stats-row {
+  display: flex;
+  gap: 20px;
+}
+
+.stat { text-align: right; }
+.stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.stat-value { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+thead th {
+  background: var(--bg);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:nth-child(even) { background: var(--surface2); }
+tbody tr:hover { background: var(--accent-light); }
+tbody tr.editing-row { background: #FFF8E8; }
+
+tbody td { padding: 9px 12px; vertical-align: middle; }
+
+.td-amount { font-weight: 700; color: var(--accent); font-size: 0.88rem; }
+.td-neg { color: var(--danger); }
+
+.cat-badge {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.row-actions { display: flex; gap: 4px; }
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.btn-icon:hover { background: var(--bg); color: var(--text); }
+.btn-icon.del:hover { color: var(--danger); background: var(--danger-light); }
+.btn-icon.edit:hover { color: var(--accent); background: var(--accent-light); }
+
+.empty-table {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* ── BATCH VIEWER (modal panel) ── */
+.viewer-overlay {
+  display: none;
+  position: fixed;
+  inset: 56px 0 0 0;
+  background: rgba(28,24,20,0.5);
+  z-index: 60;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.viewer-overlay.open { display: flex; }
+
+.viewer-panel {
+  background: var(--surface);
+  width: 100%;
+  max-width: 780px;
+  height: 100%;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.viewer-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.viewer-header h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+
+.viewer-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.viewer-body { padding: 20px 24px; flex: 1; }
+
+.version-list {
+  margin-bottom: 20px;
+}
+
+.version-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+
+.version-item .v-name { font-weight: 600; }
+.version-item .v-date { color: var(--muted); }
+
+/* ── MODALS ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28,24,20,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.18s ease;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.modal p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--text);
+  color: white;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.22s;
+  z-index: 200;
+  max-width: 300px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: var(--accent); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--warning); }
+
+/* ── DRIVE STATUS ── */
+.drive-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+}
+
+.drive-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #6EE7A0;
+  flex-shrink: 0;
+}
+
+.drive-dot.offline { background: #F87171; }
+.drive-dot.syncing { background: #FCD34D; animation: pulse 1s infinite; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── UPLOAD PROGRESS ── */
+.upload-bar {
+  display: none;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 500;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-bar.show { display: flex; }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--accent-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Family Expenses</h1>
+  <div class="header-right">
+    <div class="drive-status" id="driveStatus">
+      <div class="drive-dot offline" id="driveDot"></div>
+      <span id="driveStatusText">Not signed in</span>
+    </div>
+    <div class="batch-pill" id="batchPill">No batch</div>
+    <button class="user-btn" id="authBtn" onclick="handleAuthClick()">
+      <span id="authBtnText">Sign in</span>
+    </button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>Batch History</h3>
+      <button class="sidebar-refresh" onclick="loadBatchList()" title="Refresh">↻</button>
+    </div>
+    <div class="batch-list" id="batchList">
+      <div class="sidebar-empty">Sign in to view batch history</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content" id="mainContent">
+
+    <!-- SIGN IN SCREEN -->
+    <div class="signin-screen" id="signinScreen">
+      <div class="signin-card">
+        <h2>Family Expenses</h2>
+        <p>Sign in with Google to access your shared expense batches stored in Google Drive.</p>
+        <button class="google-btn" onclick="handleAuthClick()">
+          <svg class="google-icon" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+
+    <!-- START SCREEN (signed in, no active batch) -->
+    <div class="start-screen" id="startScreen" style="display:none">
+      <div class="start-card">
+        <h2>Ready to submit?</h2>
+        <p>Start a new batch to begin entering shared expenses. They'll be saved to Google Drive automatically.</p>
+        <button class="btn btn-primary btn-lg" onclick="startBatch()">＋ Start New Batch</button>
+      </div>
+    </div>
+
+    <!-- BATCH WORK AREA -->
+    <div class="batch-area" id="batchArea">
+
+      <div class="batch-toolbar">
+        <div class="settlement-ctrl">
+          <span>Settlement #</span>
+          <input type="number" id="settlementInput" min="1" value="1" onchange="onSettlementChange(this.value)">
+          <span style="font-size:0.75rem;color:var(--muted)">(override if needed)</span>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost" onclick="pauseBatch()">⏸ Save Draft</button>
+          <button class="btn btn-warning" onclick="showModal('endModal')" id="endBatchBtn">✉ End &amp; Send</button>
+          <button class="btn btn-ghost" onclick="showModal('cancelModal')">✕ Discard</button>
+        </div>
+      </div>
+
+      <div class="batch-body">
+
+        <!-- UPLOAD BAR -->
+        <div class="upload-bar" id="uploadBar">
+          <div class="spinner"></div>
+          <span id="uploadBarText">Saving to Google Drive...</span>
+        </div>
+
+        <!-- ENTRY FORM -->
+        <div class="form-card">
+          <div class="card-head">
+            <h3 id="formTitle">New Entry</h3>
+            <span id="editingNote" style="font-size:0.78rem;color:var(--warning);display:none">Editing row — Submit to update</span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+
+              <div class="field" id="f-date">
+                <label>Date</label>
+                <input type="text" id="dateInput" placeholder="20 Apr 26" maxlength="9" onkeydown="handleDateKey(event)">
+                <div class="error-msg">Enter date as DD MMM YY</div>
+              </div>
+
+              <div class="field" id="f-for">
+                <label>For</label>
+                <select id="forInput">
+                  <option value="LJ" selected>LJ</option>
+                  <option value="FJ">FJ</option>
+                </select>
+              </div>
+
+              <div class="field" id="f-amount">
+                <label>DJ Amount ($)</label>
+                <input type="number" id="amountInput" step="0.01" placeholder="0.00">
+                <div class="error-msg">Enter a valid amount</div>
+              </div>
+
+              <div class="field span3" id="f-desc">
+                <label>Description</label>
+                <input type="text" id="descInput" placeholder="e.g. Haircut, Uber to medical..." maxlength="100" oninput="onDescInput(this.value)">
+                <div class="error-msg">Description cannot be blank</div>
+              </div>
+
+              <div class="field span2">
+                <label>Category <span style="font-weight:300;text-transform:none;letter-spacing:0;font-size:0.85em">(auto-detected)</span></label>
+                <input type="text" id="categoryDisplay" class="cat-input" readonly placeholder="Auto-fills from description">
+                <div class="multi-cat-hint" id="multiCatHint"></div>
+              </div>
+
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="submitEntry()" id="submitEntryBtn">＋ Add Entry</button>
+              <button class="btn btn-ghost" onclick="cancelEdit()" id="cancelEditBtn" style="display:none">Cancel Edit</button>
+              <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+              <span class="hint">↑↓ arrow keys adjust date · Ctrl+↑↓ = ±1 week · Enter to add</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATA TABLE -->
+        <div class="table-card">
+          <div class="table-head">
+            <h3>Current Batch Entries</h3>
+            <div class="stats-row">
+              <div class="stat">
+                <div class="stat-label">Entries</div>
+                <div class="stat-value" id="statCount">0</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="statTotal">$0.00</div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>For</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Category</th>
+                  <th>Multi Cat</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <tr><td colspan="8" class="empty-table">No entries yet — add your first expense above</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BATCH VIEWER PANEL -->
+<div class="viewer-overlay" id="viewerOverlay" onclick="closeViewerOnOutside(event)">
+  <div class="viewer-panel" id="viewerPanel">
+    <div class="viewer-header">
+      <div>
+        <h3 id="viewerTitle">Batch —</h3>
+        <div class="viewer-meta" id="viewerMeta"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-warning" id="viewerAmendBtn" onclick="amendBatch()">✎ Amend This Batch</button>
+        <button class="btn btn-ghost" onclick="closeViewer()">✕ Close</button>
+      </div>
+    </div>
+    <div class="viewer-body">
+      <div id="viewerVersions"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Date</th><th>For</th><th>Description</th>
+              <th>Amount</th><th>Category</th><th>Multi Cat</th>
+            </tr>
+          </thead>
+          <tbody id="viewerTableBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end">
+        <div class="stat">
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="viewerTotal"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- END BATCH MODAL -->
+<div class="modal-overlay" id="endModal">
+  <div class="modal">
+    <h3>End &amp; Send Batch</h3>
+    <p>This will upload the CSV to Google Drive and open a pre-filled email to Nicholas. The batch will be archived and the settlement number will increment for next time.</p>
+    <div class="modal-actions">
+      <button class="btn btn-warning" onclick="endBatch()">✉ Upload &amp; Send</button>
+      <button class="btn btn-ghost" onclick="hideModal('endModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CANCEL MODAL -->
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal">
+    <h3>Discard Batch</h3>
+    <p>Are you sure? All entries will be discarded. Any saved draft on Google Drive will also be deleted.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="cancelBatch()">Discard</button>
+      <button class="btn btn-ghost" onclick="hideModal('cancelModal')">Keep Editing</button>
+    </div>
+  </div>
+</div>
+
+<!-- AMEND WARNING MODAL -->
+<div class="modal-overlay" id="amendWarningModal">
+  <div class="modal">
+    <h3>Unsaved Batch in Progress</h3>
+    <p>You have an active batch with unsaved entries. Save it as a draft first before opening a previous batch to amend.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="pauseAndAmend()">Save Draft &amp; Amend</button>
+      <button class="btn btn-ghost" onclick="hideModal('amendWarningModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM AMEND MODAL -->
+<div class="modal-overlay" id="confirmAmendModal">
+  <div class="modal">
+    <h3>Amend Batch <span id="amendBatchNum"></span></h3>
+    <p>The original CSV will be kept on Google Drive for audit purposes. An amended version will be uploaded with a new timestamp when you send.</p>
+    <div class="modal-actions">
+      <button class="btn btn-warning" onclick="confirmAmend()">Open for Editing</button>
+      <button class="btn btn-ghost" onclick="hideModal('confirmAmendModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- GOOGLE API -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+const CLIENT_ID = '687186894437-oggrebha79mbmm9hqhek2janf631iff0.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const FOLDER_NAME = 'FamilyExpenses';
+const TO_EMAIL = 'nicholaspjames@gmail.com';
+
+// ═══════════════════════════════════════════════════════════
+// KEYWORDS
+// ═══════════════════════════════════════════════════════════
+const KEYWORDS = [
+  { words: ['bond','rent','electric','bed'], cat: 'Accommodation' },
+  { words: ['uber','go get','transport','taxi','lyft'], cat: 'Transport' },
+  { words: ['clancy','dog','vet','pet'], cat: 'Pet' },
+  { words: ['bupa','health insurance','insurance'], cat: 'Health Insurance' },
+  { words: ['mhcp','therapy','psychiatrist','medical','doctor','medication','ear','chemist','pharmacy','nanny'], cat: 'Medical' },
+  { words: ['groceries','food','grocery'], cat: 'Food' },
+  { words: ['hair'], cat: 'Hair' },
+  { words: ['laptop','equipment','computer'], cat: 'Equipment' },
+  { words: ['student','uni','university'], cat: 'University' },
+  { words: ['misc','miscellaneous','general','to lj','repayment','loan','return duplicate','adjustment','balance'], cat: 'Miscellaneous' },
+  { words: ['balancing payment'], cat: 'Balancing Payment' },
+];
+
+function detectCats(desc) {
+  if (!desc) return { primary: '', multi: '' };
+  const low = desc.toLowerCase();
+  const found = [];
+  for (const k of KEYWORDS) {
+    for (const w of k.words) {
+      if (low.includes(w) && !found.includes(k.cat)) { found.push(k.cat); break; }
+    }
+  }
+  return { primary: found[0] || 'Miscellaneous', multi: found.join(', ') || 'Miscellaneous' };
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let accessToken = null;
+let folderId = null;
+let batchActive = false;
+let isAmending = false;
+let amendingBatchNum = null;
+let settlementNum = 1;
+let entries = [];
+let editingIndex = null;
+let pendingAmendBatch = null;
+let batchFiles = []; // [{batchNum, files:[{name,id,modifiedTime}]}]
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+function handleAuthClick() {
+  if (accessToken) { signOut(); return; }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { toast('Sign in failed: ' + resp.error, 'error'); return; }
+      accessToken = resp.access_token;
+      onSignedIn();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function onSignedIn() {
+  setDriveStatus('syncing', 'Connecting…');
+  document.getElementById('authBtnText').textContent = 'Sign out';
+  try {
+    folderId = await getOrCreateFolder(FOLDER_NAME);
+    setDriveStatus('online', 'Connected');
+    document.getElementById('signinScreen').style.display = 'none';
+    await loadBatchList();
+    await checkForDraft();
+  } catch(e) {
+    setDriveStatus('offline', 'Error');
+    toast('Drive connection failed', 'error');
+  }
+}
+
+function signOut() {
+  google.accounts.oauth2.revoke(accessToken, () => {});
+  accessToken = null;
+  folderId = null;
+  batchActive = false;
+  entries = [];
+  document.getElementById('signinScreen').style.display = 'flex';
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('batchArea').classList.remove('visible');
+  document.getElementById('batchList').innerHTML = '<div class="sidebar-empty">Sign in to view batch history</div>';
+  setDriveStatus('offline', 'Not signed in');
+  document.getElementById('authBtnText').textContent = 'Sign in';
+  setPill('No batch');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRIVE HELPERS
+// ═══════════════════════════════════════════════════════════
+async function driveRequest(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + accessToken, ...(opts.headers||{}) }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function getOrCreateFolder(name) {
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  if (res.files.length) return res.files[0].id;
+  const created = await driveRequest('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  return created.id;
+}
+
+async function uploadFile(name, content, mimeType = 'text/csv', existingId = null) {
+  const meta = { name, parents: existingId ? undefined : [folderId] };
+  const boundary = 'famex_boundary';
+  const body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n${content}\r\n--${boundary}--`;
+  const url = existingId
+    ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+  return driveRequest(url, {
+    method: existingId ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body
+  });
+}
+
+async function deleteFile(fileId) {
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
+}
+
+async function listFolderFiles() {
+  const q = `'${folderId}' in parents and trashed=false`;
+  const res = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)&orderBy=name`
+  );
+  return res.files;
+}
+
+async function readFileText(fileId) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { 'Authorization': 'Bearer ' + accessToken }
+  });
+  return res.text();
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH LIST
+// ═══════════════════════════════════════════════════════════
+async function loadBatchList() {
+  if (!accessToken || !folderId) return;
+  setDriveStatus('syncing', 'Loading…');
+  try {
+    const files = await listFolderFiles();
+    batchFiles = groupBatchFiles(files);
+    renderSidebar();
+    setDriveStatus('online', 'Connected');
+
+    // figure out next settlement number
+    const nums = batchFiles.filter(b => !b.isDraft).map(b => b.batchNum);
+    if (nums.length) settlementNum = Math.max(...nums) + 1;
+    document.getElementById('settlementInput').value = settlementNum;
+  } catch(e) {
+    setDriveStatus('offline', 'Error loading');
+  }
+}
+
+function groupBatchFiles(files) {
+  const map = {};
+  for (const f of files) {
+    // CSV: FamilyExpenses-B3-2504201430.csv
+    const csvMatch = f.name.match(/^FamilyExpenses-B(\d+)-(\d{10})\.csv$/i);
+    // Draft: FAMEX - DRAFT-B3.json
+    const draftMatch = f.name.match(/^FAMEX - DRAFT-B(\d+)\.json$/i);
+    if (csvMatch) {
+      const num = parseInt(csvMatch[1]);
+      if (!map[num]) map[num] = { batchNum: num, csvFiles: [], draftFile: null };
+      map[num].csvFiles.push(f);
+    } else if (draftMatch) {
+      const num = parseInt(draftMatch[1]);
+      if (!map[num]) map[num] = { batchNum: num, csvFiles: [], draftFile: null };
+      map[num].draftFile = f;
+    }
+  }
+  return Object.values(map).sort((a,b) => b.batchNum - a.batchNum);
+}
+
+function renderSidebar() {
+  const el = document.getElementById('batchList');
+  if (!batchFiles.length) {
+    el.innerHTML = '<div class="sidebar-empty">No batches yet.<br>Start your first batch to begin.</div>';
+    return;
+  }
+  el.innerHTML = batchFiles.map(b => {
+    const versions = b.csvFiles.length;
+    const versionsNote = versions > 1 ? `<div class="batch-item-versions">↻ ${versions} versions (amended)</div>` : '';
+    const draftNote = b.draftFile ? `<span class="batch-item-draft">DRAFT</span>` : '';
+    return `<div class="batch-item" onclick="openBatchViewer(${b.batchNum})">
+      <div class="batch-item-num">Batch ${b.batchNum} ${draftNote}</div>
+      <div class="batch-item-meta">${versions} CSV${versions!==1?'s':''} on Drive</div>
+      ${versionsNote}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAFT
+// ═══════════════════════════════════════════════════════════
+async function checkForDraft() {
+  const files = await listFolderFiles();
+  const drafts = files.filter(f => f.name.match(/^FAMEX - DRAFT-B\d+\.json$/i));
+  if (drafts.length) {
+    const latest = drafts[drafts.length - 1];
+    const match = latest.name.match(/B(\d+)/);
+    const num = match ? parseInt(match[1]) : null;
+    toast(`Draft found for Batch ${num}. Click it in the sidebar to resume.`, 'info');
+  }
+  showStartOrBatch();
+}
+
+function showStartOrBatch() {
+  if (!batchActive) {
+    document.getElementById('startScreen').style.display = 'flex';
+    document.getElementById('batchArea').classList.remove('visible');
+  }
+}
+
+async function pauseBatch() {
+  if (!entries.length) { toast('Nothing to save yet'); return; }
+  showUploadBar('Saving draft to Google Drive…');
+  try {
+    const json = JSON.stringify({ settlementNum, entries, timestamp: Date.now() });
+    const draftName = `FAMEX - DRAFT-B${settlementNum}.json`;
+    // check if draft already exists
+    const files = await listFolderFiles();
+    const existing = files.find(f => f.name === draftName);
+    await uploadFile(draftName, json, 'application/json', existing ? existing.id : null);
+    hideUploadBar();
+    toast('Draft saved to Google Drive', 'success');
+    await loadBatchList();
+  } catch(e) {
+    hideUploadBar();
+    toast('Failed to save draft', 'error');
+  }
+}
+
+async function resumeDraft(batchNum) {
+  const batch = batchFiles.find(b => b.batchNum === batchNum);
+  if (!batch || !batch.draftFile) return;
+  showUploadBar('Loading draft…');
+  try {
+    const text = await readFileText(batch.draftFile.id);
+    const data = JSON.parse(text);
+    settlementNum = data.settlementNum || batchNum;
+    entries = data.entries || [];
+    hideUploadBar();
+    activateBatchArea();
+    renderTable();
+    toast(`Resumed draft for Batch ${settlementNum}`, 'success');
+  } catch(e) {
+    hideUploadBar();
+    toast('Could not load draft', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH LIFECYCLE
+// ═══════════════════════════════════════════════════════════
+function startBatch() {
+  batchActive = true;
+  isAmending = false;
+  amendingBatchNum = null;
+  entries = [];
+  editingIndex = null;
+  document.getElementById('startScreen').style.display = 'none';
+  activateBatchArea();
+  setDateDefault();
+  renderTable();
+  setPill('Batch ' + settlementNum);
+  toast('Batch ' + settlementNum + ' started');
+}
+
+function activateBatchArea() {
+  document.getElementById('batchArea').classList.add('visible');
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('settlementInput').value = settlementNum;
+  setPill('Batch ' + settlementNum);
+}
+
+function onSettlementChange(val) {
+  settlementNum = parseInt(val) || 1;
+  setPill('Batch ' + settlementNum);
+}
+
+async function endBatch() {
+  hideModal('endModal');
+  if (!entries.length) { toast('Add at least one entry first'); return; }
+  showUploadBar('Uploading CSV to Google Drive…');
+  try {
+    const csv = generateCSV();
+    const filename = csvFilename(settlementNum);
+    await uploadFile(filename, csv, 'text/csv');
+
+    // delete draft if exists
+    const files = await listFolderFiles();
+    const draft = files.find(f => f.name === `FAMEX - DRAFT-B${settlementNum}.json`);
+    if (draft) await deleteFile(draft.id);
+
+    hideUploadBar();
+    openEmail(filename);
+    const nextNum = settlementNum + 1;
+    settlementNum = nextNum;
+    document.getElementById('settlementInput').value = nextNum;
+    await loadBatchList();
+    resetBatchUI();
+    toast('Batch sent! Next settlement will be #' + nextNum, 'success');
+  } catch(e) {
+    hideUploadBar();
+    toast('Upload failed — check Drive connection', 'error');
+  }
+}
+
+async function cancelBatch() {
+  hideModal('cancelModal');
+  // delete draft if exists
+  try {
+    const files = await listFolderFiles();
+    const draft = files.find(f => f.name === `FAMEX - DRAFT-B${settlementNum}.json`);
+    if (draft) await deleteFile(draft.id);
+  } catch(e) {}
+  resetBatchUI();
+  toast('Batch discarded');
+}
+
+function resetBatchUI() {
+  batchActive = false;
+  isAmending = false;
+  amendingBatchNum = null;
+  entries = [];
+  editingIndex = null;
+  document.getElementById('batchArea').classList.remove('visible');
+  document.getElementById('startScreen').style.display = 'flex';
+  setPill('No batch');
+  clearForm();
+}
+
+// ═══════════════════════════════════════════════════════════
+// AMEND
+// ═══════════════════════════════════════════════════════════
+function openBatchViewer(batchNum) {
+  const batch = batchFiles.find(b => b.batchNum === batchNum);
+  if (!batch) return;
+
+  pendingAmendBatch = batchNum;
+  document.getElementById('viewerTitle').textContent = `Batch ${batchNum}`;
+  document.getElementById('viewerMeta').textContent = `${batch.csvFiles.length} version(s) on Drive`;
+
+  // versions list
+  if (batch.csvFiles.length > 1) {
+    document.getElementById('viewerVersions').innerHTML = `
+      <div class="version-list">
+        <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Versions on Drive</div>
+        ${batch.csvFiles.map(f => `
+          <div class="version-item">
+            <span class="v-name">${f.name}</span>
+            <span class="v-date">${new Date(f.modifiedTime).toLocaleString()}</span>
+          </div>`).join('')}
+      </div>`;
+  } else {
+    document.getElementById('viewerVersions').innerHTML = '';
+  }
+
+  // load latest CSV
+  const latest = batch.csvFiles[batch.csvFiles.length - 1];
+  if (latest) {
+    loadViewerCSV(latest.id);
+  } else if (batch.draftFile) {
+    loadViewerDraft(batch.draftFile.id);
+  }
+
+  document.getElementById('viewerOverlay').classList.add('open');
+}
+
+async function loadViewerCSV(fileId) {
+  document.getElementById('viewerTableBody').innerHTML = '<tr><td colspan="7" class="empty-table">Loading…</td></tr>';
+  try {
+    const text = await readFileText(fileId);
+    const rows = parseCSV(text);
+    renderViewerTable(rows);
+  } catch(e) {
+    document.getElementById('viewerTableBody').innerHTML = '<tr><td colspan="7" class="empty-table">Could not load file</td></tr>';
+  }
+}
+
+async function loadViewerDraft(fileId) {
+  document.getElementById('viewerTableBody').innerHTML = '<tr><td colspan="7" class="empty-table">Loading…</td></tr>';
+  try {
+    const text = await readFileText(fileId);
+    const data = JSON.parse(text);
+    renderViewerTable(data.entries.map(e => ({
+      date: e.date, for: e.for, description: e.description,
+      djAmount: e.djAmount, category: e.category, multiCategory: e.multiCategory
+    })));
+  } catch(e) {}
+}
+
+function renderViewerTable(rows) {
+  if (!rows.length) {
+    document.getElementById('viewerTableBody').innerHTML = '<tr><td colspan="7" class="empty-table">No entries</td></tr>';
+    return;
+  }
+  let total = 0;
+  document.getElementById('viewerTableBody').innerHTML = rows.map((r, i) => {
+    const amt = parseFloat(r.djAmount || r['DJ Amount'] || 0);
+    total += amt;
+    const cat = r.category || r['Category'] || '';
+    const multiCat = r.multiCategory || r['Multi Category'] || cat;
+    const desc = r.description || r['Description'] || '';
+    const date = r.date || r['Date'] || '';
+    const forVal = r.for || r['For'] || '';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${date}</td>
+      <td>${forVal}</td>
+      <td>${desc}</td>
+      <td class="td-amount${amt<0?' td-neg':''}">${fmt(amt)}</td>
+      <td><span class="cat-badge">${cat}</span></td>
+      <td style="font-size:0.75rem;color:var(--muted)">${multiCat}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('viewerTotal').textContent = fmt(total);
+}
+
+function amendBatch() {
+  if (batchActive && entries.length) {
+    hideModal('confirmAmendModal');
+    showModal('amendWarningModal');
+    return;
+  }
+  document.getElementById('amendBatchNum').textContent = pendingAmendBatch;
+  showModal('confirmAmendModal');
+}
+
+async function pauseAndAmend() {
+  hideModal('amendWarningModal');
+  await pauseBatch();
+  document.getElementById('amendBatchNum').textContent = pendingAmendBatch;
+  showModal('confirmAmendModal');
+}
+
+async function confirmAmend() {
+  hideModal('confirmAmendModal');
+  closeViewer();
+  const batchNum = pendingAmendBatch;
+  const batch = batchFiles.find(b => b.batchNum === batchNum);
+  if (!batch) return;
+
+  showUploadBar('Loading batch for editing…');
+  try {
+    let loadedEntries = [];
+    if (batch.draftFile) {
+      const text = await readFileText(batch.draftFile.id);
+      const data = JSON.parse(text);
+      loadedEntries = data.entries || [];
+    } else if (batch.csvFiles.length) {
+      const latest = batch.csvFiles[batch.csvFiles.length - 1];
+      const text = await readFileText(latest.id);
+      loadedEntries = csvToEntries(text);
+    }
+    entries = loadedEntries;
+    settlementNum = batchNum;
+    isAmending = true;
+    amendingBatchNum = batchNum;
+    batchActive = true;
+    hideUploadBar();
+    activateBatchArea();
+    renderTable();
+    setDateDefault();
+    toast(`Editing Batch ${batchNum} — send to create a new versioned CSV`, 'info');
+  } catch(e) {
+    hideUploadBar();
+    toast('Could not load batch for editing', 'error');
+  }
+}
+
+function closeViewer() {
+  document.getElementById('viewerOverlay').classList.remove('open');
+}
+
+function closeViewerOnOutside(e) {
+  if (e.target === document.getElementById('viewerOverlay')) closeViewer();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORM
+// ═══════════════════════════════════════════════════════════
+function onDescInput(val) {
+  const cats = detectCats(val);
+  document.getElementById('categoryDisplay').value = cats.primary;
+  document.getElementById('multiCatHint').textContent =
+    cats.multi !== cats.primary ? 'Multi: ' + cats.multi : '';
+}
+
+function clearForm() {
+  document.getElementById('dateInput').value = todayStr();
+  document.getElementById('forInput').value = 'LJ';
+  document.getElementById('descInput').value = '';
+  document.getElementById('amountInput').value = '';
+  document.getElementById('categoryDisplay').value = '';
+  document.getElementById('multiCatHint').textContent = '';
+  clearFieldErrors();
+}
+
+function clearFieldErrors() {
+  ['f-date','f-desc','f-amount'].forEach(id => document.getElementById(id).classList.remove('has-error'));
+}
+
+function validate() {
+  let ok = true;
+  clearFieldErrors();
+  if (!isValidDate(document.getElementById('dateInput').value.trim())) {
+    document.getElementById('f-date').classList.add('has-error'); ok = false;
+  }
+  if (!document.getElementById('descInput').value.trim()) {
+    document.getElementById('f-desc').classList.add('has-error'); ok = false;
+  }
+  const amt = document.getElementById('amountInput').value;
+  if (amt === '' || isNaN(parseFloat(amt))) {
+    document.getElementById('f-amount').classList.add('has-error'); ok = false;
+  }
+  return ok;
+}
+
+function submitEntry() {
+  if (!validate()) return;
+  const desc = document.getElementById('descInput').value.trim();
+  const cats = detectCats(desc);
+  const djAmt = parseFloat(document.getElementById('amountInput').value);
+  const entry = {
+    date: document.getElementById('dateInput').value.trim(),
+    settlement: settlementNum,
+    funder: 'DJ',
+    for: document.getElementById('forInput').value,
+    description: desc,
+    djAmount: djAmt,
+    njAmount: 0,
+    sum: djAmt,
+    difference: djAmt,
+    eaFlag: 'Expense',
+    category: cats.primary,
+    multiCategory: cats.multi
+  };
+  if (editingIndex !== null) {
+    entries[editingIndex] = entry;
+    editingIndex = null;
+    document.getElementById('submitEntryBtn').textContent = '＋ Add Entry';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('editingNote').style.display = 'none';
+    document.getElementById('formTitle').textContent = 'New Entry';
+  } else {
+    entries.push(entry);
+  }
+  renderTable();
+  clearForm();
+  document.getElementById('descInput').focus();
+}
+
+function editEntry(i) {
+  const e = entries[i];
+  editingIndex = i;
+  document.getElementById('dateInput').value = e.date;
+  document.getElementById('forInput').value = e.for;
+  document.getElementById('descInput').value = e.description;
+  document.getElementById('amountInput').value = e.djAmount;
+  document.getElementById('categoryDisplay').value = e.category;
+  document.getElementById('multiCatHint').textContent =
+    e.multiCategory !== e.category ? 'Multi: ' + e.multiCategory : '';
+  document.getElementById('submitEntryBtn').textContent = '✓ Update Entry';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  document.getElementById('editingNote').style.display = 'inline';
+  document.getElementById('formTitle').textContent = 'Edit Entry';
+  document.getElementById('descInput').focus();
+  // highlight row
+  renderTable();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingIndex = null;
+  document.getElementById('submitEntryBtn').textContent = '＋ Add Entry';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('editingNote').style.display = 'none';
+  document.getElementById('formTitle').textContent = 'New Entry';
+  clearForm();
+}
+
+function deleteEntry(i) {
+  entries.splice(i, 1);
+  if (editingIndex === i) cancelEdit();
+  renderTable();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════════════════
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-table">No entries yet — add your first expense above</td></tr>';
+    document.getElementById('statCount').textContent = '0';
+    document.getElementById('statTotal').textContent = '$0.00';
+    return;
+  }
+  tbody.innerHTML = entries.map((e, i) => `
+    <tr class="${editingIndex === i ? 'editing-row' : ''}">
+      <td>${i+1}</td>
+      <td>${e.date}</td>
+      <td>${e.for}</td>
+      <td>${e.description}</td>
+      <td class="td-amount${e.djAmount<0?' td-neg':''}">${fmt(e.djAmount)}</td>
+      <td><span class="cat-badge">${e.category}</span></td>
+      <td style="font-size:0.75rem;color:var(--muted)">${e.multiCategory}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn-icon edit" onclick="editEntry(${i})" title="Edit">✎</button>
+          <button class="btn-icon del" onclick="deleteEntry(${i})" title="Delete">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  const total = entries.reduce((s,e) => s + e.djAmount, 0);
+  document.getElementById('statCount').textContent = entries.length;
+  document.getElementById('statTotal').textContent = fmt(total);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV / DATA
+// ═══════════════════════════════════════════════════════════
+function generateCSV() {
+  const headers = ['Date','Settlement','Funder','For','Description','DJ Amount','NJ Amount','Sum','Difference','EA Flag','Category','Multi Category'];
+  const rows = entries.map(e => [
+    e.date, e.settlement, e.funder, e.for,
+    `"${e.description.replace(/"/g,'""')}"`,
+    e.djAmount.toFixed(2), e.njAmount.toFixed(2),
+    e.sum.toFixed(2), e.difference.toFixed(2),
+    e.eaFlag, e.category,
+    `"${e.multiCategory}"`
+  ].join(','));
+  return [headers.join(','), ...rows].join('\n');
+}
+
+function csvFilename(num) {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const dd = String(now.getDate()).padStart(2,'0');
+  const hh = String(now.getHours()).padStart(2,'0');
+  const min = String(now.getMinutes()).padStart(2,'0');
+  return `FamilyExpenses-B${num}-${yy}${mm}${dd}${hh}${min}.csv`;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
+    const obj = {};
+    headers.forEach((h,i) => { obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+    return obj;
+  });
+}
+
+function csvToEntries(text) {
+  const rows = parseCSV(text);
+  return rows.map(r => ({
+    date: r['Date']||'', settlement: parseInt(r['Settlement'])||settlementNum,
+    funder: r['Funder']||'DJ', for: r['For']||'LJ',
+    description: r['Description']||'',
+    djAmount: parseFloat(r['DJ Amount'])||0, njAmount: 0,
+    sum: parseFloat(r['Sum'])||0, difference: parseFloat(r['Difference'])||0,
+    eaFlag: r['EA Flag']||'Expense',
+    category: r['Category']||'Miscellaneous',
+    multiCategory: r['Multi Category']||r['Category']||'Miscellaneous'
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMAIL
+// ═══════════════════════════════════════════════════════════
+function openEmail(filename) {
+  const total = entries.reduce((s,e) => s + e.djAmount, 0);
+  const subject = encodeURIComponent(`Shared Expenses — Batch ${settlementNum}`);
+  const body = encodeURIComponent(
+    `Hi Nicholas,\n\nPlease find the shared expenses for Batch ${settlementNum} uploaded to Google Drive.\n\nFile: ${filename}\nEntries: ${entries.length}\nTotal: ${fmt(total)}\n\nRegards`
+  );
+  window.location.href = `mailto:${TO_EMAIL}?subject=${subject}&body=${body}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATE HELPERS
+// ═══════════════════════════════════════════════════════════
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+}
+
+function setDateDefault() {
+  document.getElementById('dateInput').value = todayStr();
+}
+
+function isValidDate(s) {
+  if (!s) return false;
+  const parts = s.trim().split(/[\s\-]+/);
+  if (parts.length !== 3) return false;
+  return !isNaN(parseInt(parts[0])) &&
+    MONTHS.map(m=>m.toLowerCase()).includes(parts[1].toLowerCase()) &&
+    parts[2].length === 2;
+}
+
+function parseDate(s) {
+  const parts = s.trim().split(/[\s\-]+/);
+  const day = parseInt(parts[0]);
+  const mon = MONTHS.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+  const yr = 2000 + parseInt(parts[2]);
+  return new Date(yr, mon, day);
+}
+
+function formatDate(d) {
+  return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+}
+
+function handleDateKey(e) {
+  const input = e.target;
+  const val = input.value.trim();
+  if (!isValidDate(val)) return;
+  let delta = 0;
+  if (e.key === 'ArrowUp') delta = e.ctrlKey || e.metaKey ? 7 : 1;
+  if (e.key === 'ArrowDown') delta = e.ctrlKey || e.metaKey ? -7 : -1;
+  if (!delta) return;
+  e.preventDefault();
+  const d = parseDate(val);
+  d.setDate(d.getDate() + delta);
+  input.value = formatDate(d);
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function fmt(n) {
+  const sign = n < 0 ? '-' : '';
+  return sign + '$' + Math.abs(n).toFixed(2);
+}
+
+function setPill(text) {
+  document.getElementById('batchPill').textContent = text;
+}
+
+function setDriveStatus(state, text) {
+  const dot = document.getElementById('driveDot');
+  dot.className = 'drive-dot';
+  if (state === 'offline') dot.classList.add('offline');
+  else if (state === 'syncing') dot.classList.add('syncing');
+  document.getElementById('driveStatusText').textContent = text;
+}
+
+function showUploadBar(text) {
+  const bar = document.getElementById('uploadBar');
+  document.getElementById('uploadBarText').textContent = text;
+  bar.classList.add('show');
+}
+
+function hideUploadBar() {
+  document.getElementById('uploadBar').classList.remove('show');
+}
+
+function showModal(id) { document.getElementById(id).classList.add('open'); }
+function hideModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && batchActive &&
+      document.activeElement.tagName !== 'BUTTON' &&
+      document.activeElement.id !== 'dateInput') {
+    submitEntry();
+  }
+  if (e.key === 'Escape') {
+    hideModal('endModal'); hideModal('cancelModal');
+    hideModal('amendWarningModal'); hideModal('confirmAmendModal');
+    closeViewer();
+  }
+});
+
+// Close modals on outside click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
