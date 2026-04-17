@@ -990,6 +990,7 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
         <div class="viewer-meta" id="viewerMeta"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" id="viewerResumeBtn" onclick="resumeDraftFromViewer()" style="display:none">▶ Resume Draft</button>
         <button class="btn btn-warning" id="viewerAmendBtn" onclick="amendBatch()">✎ Amend This Batch</button>
         <button class="btn btn-ghost" onclick="closeViewer()">✕ Close</button>
       </div>
@@ -1237,12 +1238,36 @@ async function loadBatchList() {
   setDriveStatus('syncing', 'Loading…');
   try {
     const files = await listFolderFiles();
-    batchFiles = groupBatchFiles(files);
+    const grouped = groupBatchFiles(files);
+
+    // Read each file to get entry count and total
+    for (const b of grouped) {
+      if (b.csvFiles.length) {
+        const latest = b.csvFiles[b.csvFiles.length - 1];
+        try {
+          const text = await readFileText(latest.id);
+          const rows = parseCSV(text);
+          b.count = rows.length;
+          b.total = rows.reduce((s,r) => s + (parseFloat(r['DJ Amount'])||0), 0);
+          b.latestDate = latest.modifiedTime;
+        } catch(e) { b.count = '?'; b.total = 0; }
+      }
+      if (b.draftFile) {
+        try {
+          const text = await readFileText(b.draftFile.id);
+          const data = JSON.parse(text);
+          b.draftCount = (data.entries||[]).length;
+          b.draftTotal = (data.entries||[]).reduce((s,e) => s + (e.djAmount||0), 0);
+          b.draftDate = b.draftFile.modifiedTime;
+        } catch(e) { b.draftCount = '?'; b.draftTotal = 0; }
+      }
+    }
+
+    batchFiles = grouped;
     renderSidebar();
     setDriveStatus('online', 'Connected');
 
-    // figure out next settlement number
-    const nums = batchFiles.filter(b => !b.isDraft).map(b => b.batchNum);
+    const nums = batchFiles.filter(b => b.csvFiles.length > 0).map(b => b.batchNum);
     if (nums.length) settlementNum = Math.max(...nums) + 1;
     document.getElementById('settlementInput').value = settlementNum;
   } catch(e) {
@@ -1250,12 +1275,16 @@ async function loadBatchList() {
   }
 }
 
+function fmtDate(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+}
+
 function groupBatchFiles(files) {
   const map = {};
   for (const f of files) {
-    // CSV: FamilyExpenses-B3-2504201430.csv
     const csvMatch = f.name.match(/^FamilyExpenses-B(\d+)-(\d{10})\.csv$/i);
-    // Draft: FAMEX - DRAFT-B3.json
     const draftMatch = f.name.match(/^FAMEX - DRAFT-B(\d+)\.json$/i);
     if (csvMatch) {
       const num = parseInt(csvMatch[1]);
@@ -1278,13 +1307,27 @@ function renderSidebar() {
   }
   el.innerHTML = batchFiles.map(b => {
     const versions = b.csvFiles.length;
-    const versionsNote = versions > 1 ? `<div class="batch-item-versions">↻ ${versions} versions (amended)</div>` : '';
-    const draftNote = b.draftFile ? `<span class="batch-item-draft">DRAFT</span>` : '';
-    return `<div class="batch-item" onclick="openBatchViewer(${b.batchNum})">
-      <div class="batch-item-num">Batch ${b.batchNum} ${draftNote}</div>
-      <div class="batch-item-meta">${versions} CSV${versions!==1?'s':''} on Drive</div>
-      ${versionsNote}
-    </div>`;
+    let html = `<div class="batch-item" onclick="openBatchViewer(${b.batchNum})">
+      <div class="batch-item-num">Batch ${b.batchNum}</div>`;
+
+    if (versions > 0) {
+      html += `<div class="batch-item-meta">Finalised — ${fmtDate(b.latestDate)}</div>`;
+      html += `<div class="batch-item-total">${b.count} entr${b.count===1?'y':'ies'} · ${fmt(b.total)}</div>`;
+      if (versions > 1) {
+        html += `<div class="batch-item-versions">↻ ${versions} versions on Drive</div>`;
+      }
+    }
+
+    if (b.draftFile) {
+      html += `<div style="margin-top:${versions?'6px':'0'}">
+        <span class="batch-item-draft">DRAFT</span>
+        <span class="batch-item-meta" style="display:inline;margin-left:6px">${fmtDate(b.draftDate)}</span>
+      </div>`;
+      html += `<div class="batch-item-total" style="color:var(--warning)">${b.draftCount} entr${b.draftCount===1?'y':'ies'} · ${fmt(b.draftTotal)}</div>`;
+    }
+
+    html += `</div>`;
+    return html;
   }).join('');
 }
 
@@ -1316,13 +1359,13 @@ async function pauseBatch() {
   try {
     const json = JSON.stringify({ settlementNum, entries, timestamp: Date.now() });
     const draftName = `FAMEX - DRAFT-B${settlementNum}.json`;
-    // check if draft already exists
     const files = await listFolderFiles();
     const existing = files.find(f => f.name === draftName);
     await uploadFile(draftName, json, 'application/json', existing ? existing.id : null);
     hideUploadBar();
-    toast('Draft saved to Google Drive', 'success');
     await loadBatchList();
+    resetBatchUI();
+    toast(`Draft saved — Batch ${settlementNum} can be resumed from the sidebar`, 'success');
   } catch(e) {
     hideUploadBar();
     toast('Failed to save draft', 'error');
@@ -1374,6 +1417,9 @@ function activateBatchArea() {
 
 function onSettlementChange(val) {
   settlementNum = parseInt(val) || 1;
+  // update all existing entries retroactively
+  entries = entries.map(e => ({ ...e, settlement: settlementNum }));
+  renderTable();
   setPill('Batch ' + settlementNum);
 }
 
@@ -1438,10 +1484,21 @@ function openBatchViewer(batchNum) {
 
   pendingAmendBatch = batchNum;
   document.getElementById('viewerTitle').textContent = `Batch ${batchNum}`;
-  document.getElementById('viewerMeta').textContent = `${batch.csvFiles.length} version(s) on Drive`;
+
+  const versions = batch.csvFiles.length;
+  const hasDraft = !!batch.draftFile;
+  document.getElementById('viewerMeta').textContent =
+    (versions > 0 ? `${versions} finalised version${versions>1?'s':''} on Drive` : '') +
+    (versions > 0 && hasDraft ? ' · ' : '') +
+    (hasDraft ? 'Draft saved' : '');
+
+  // Show/hide Resume button
+  document.getElementById('viewerResumeBtn').style.display = hasDraft ? 'inline-flex' : 'none';
+  // Hide amend if only a draft (nothing to amend yet)
+  document.getElementById('viewerAmendBtn').style.display = versions > 0 ? 'inline-flex' : 'none';
 
   // versions list
-  if (batch.csvFiles.length > 1) {
+  if (versions > 1) {
     document.getElementById('viewerVersions').innerHTML = `
       <div class="version-list">
         <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Versions on Drive</div>
@@ -1455,7 +1512,7 @@ function openBatchViewer(batchNum) {
     document.getElementById('viewerVersions').innerHTML = '';
   }
 
-  // load latest CSV
+  // load latest CSV, or draft if no CSV
   const latest = batch.csvFiles[batch.csvFiles.length - 1];
   if (latest) {
     loadViewerCSV(latest.id);
@@ -1576,6 +1633,16 @@ function closeViewerOnOutside(e) {
   if (e.target === document.getElementById('viewerOverlay')) closeViewer();
 }
 
+async function resumeDraftFromViewer() {
+  if (batchActive && entries.length) {
+    closeViewer();
+    showModal('amendWarningModal');
+    return;
+  }
+  closeViewer();
+  await resumeDraft(pendingAmendBatch);
+}
+
 // ═══════════════════════════════════════════════════════════
 // FORM
 // ═══════════════════════════════════════════════════════════
@@ -1588,6 +1655,16 @@ function onDescInput(val) {
 
 function clearForm() {
   document.getElementById('dateInput').value = todayStr();
+  document.getElementById('forInput').value = 'LJ';
+  document.getElementById('descInput').value = '';
+  document.getElementById('amountInput').value = '';
+  document.getElementById('categoryDisplay').value = '';
+  document.getElementById('multiCatHint').textContent = '';
+  clearFieldErrors();
+}
+
+function clearFormKeepDate(date) {
+  document.getElementById('dateInput').value = date;
   document.getElementById('forInput').value = 'LJ';
   document.getElementById('descInput').value = '';
   document.getElementById('amountInput').value = '';
@@ -1642,12 +1719,16 @@ function submitEntry() {
     document.getElementById('cancelEditBtn').style.display = 'none';
     document.getElementById('editingNote').style.display = 'none';
     document.getElementById('formTitle').textContent = 'New Entry';
+    renderTable();
+    clearForm();
+    document.getElementById('dateInput').focus();
   } else {
     entries.push(entry);
+    const savedDate = entry.date; // keep date for next entry
+    renderTable();
+    clearFormKeepDate(savedDate);
+    document.getElementById('dateInput').focus();
   }
-  renderTable();
-  clearForm();
-  document.getElementById('descInput').focus();
 }
 
 function editEntry(i) {
